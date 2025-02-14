@@ -10,6 +10,7 @@ model = tf.keras.models.load_model('EquiSync_Model.h5')
 
 # Initialize Flask app
 app = Flask(__name__)
+CORS(app)
 
 # Define a scaler to match training preprocessing
 scaler = MinMaxScaler()
