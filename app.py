@@ -4,12 +4,6 @@ import pandas as pd
 import tensorflow as tf
 from flask import Flask, request, jsonify
 from sklearn.preprocessing import MinMaxScaler
-import os
-from tensorflow.keras.losses import MeanSquaredError
-
-model_path = os.path.join(os.path.dirname(__file__), 'EquiSync_Model.h5')
-model = tf.keras.models.load_model(model_path, custom_objects={'mse': MeanSquaredError()})
-
 
 # Load trained model
 model = tf.keras.models.load_model('EquiSync_Model.h5')
