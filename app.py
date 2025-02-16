@@ -4,6 +4,7 @@ import pandas as pd
 import tensorflow as tf
 from flask import Flask, request, jsonify
 from sklearn.preprocessing import MinMaxScaler
+from flask_cors import CORS
 
 # Load trained model
 model = tf.keras.models.load_model('EquiSync_Model.h5')
