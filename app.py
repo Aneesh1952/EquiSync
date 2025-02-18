@@ -20,22 +20,48 @@ features = ['Stride_Length (m)', 'Acceleration (m/s^2)', 'Speed (km/h)',
            'Heart_Rate (bpm)', 'Oxygen_Level (%)']
 
 def create_app():
-    """Create and configure the Flask application"""
     app = Flask(__name__)
     CORS(app)
     
-    # Load model at startup
-    global model
-    try:
-        # Configure TF for CPU
-        tf.config.threading.set_intra_op_parallelism_threads(1)
-        tf.config.threading.set_inter_op_parallelism_threads(1)
-        
-        model = tf.keras.models.load_model('EquiSync_Model.h5', compile=False)
-        model.compile(optimizer='adam', loss='mse')
-        logger.info("Model loaded successfully")
-    except Exception as e:
-        logger.error(f"Error loading model: {str(e)}")
+    # Add memory monitoring
+    import psutil
+    import gc
+    
+    def load_model_safely():
+        global model
+        try:
+            # Free up memory before loading
+            gc.collect()
+            
+            # Set lower precision to reduce memory usage
+            tf.keras.backend.set_floatx('float32')
+            
+            # Load model with memory-efficient settings
+            model = tf.keras.models.load_model('EquiSync_Model.h5', compile=False)
+            model.compile(optimizer='adam', loss='mse', run_eagerly=False)
+            
+            # Optimize model for inference
+            model.make_predict_function()
+            
+            logger.info("Model loaded successfully")
+            return True
+        except Exception as e:
+            logger.error(f"Error loading model: {str(e)}")
+            return False
+
+    # Initial model load
+    load_model_safely()
+    
+    # Add memory monitoring middleware
+    @app.before_request
+    def check_memory():
+        mem_usage = psutil.Process().memory_percent()
+        if mem_usage > 90:
+            logger.warning(f"High memory usage: {mem_usage}%")
+            # Attempt to free memory
+            gc.collect()
+            if mem_usage > 95:
+                load_model_safely()  # Reload model if necessary
     
     def preprocess_input(data):
         """Preprocess input data with error handling"""
